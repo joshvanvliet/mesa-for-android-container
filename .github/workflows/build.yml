@@ -132,7 +132,14 @@ jobs:
           sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources
           apt update
           apt build-dep -y mesa
-          apt install -y git ccache libxfixes-dev libarchive-dev
+          apt install -y git ccache libxfixes-dev libarchive-dev python3-venv
+
+      - name: Install Meson >= 1.4 for Bookworm
+        run: |
+          python3 -m venv /opt/meson-venv
+          /opt/meson-venv/bin/pip install --upgrade pip
+          /opt/meson-venv/bin/pip install "meson>=1.4.0"
+          /opt/meson-venv/bin/meson --version
 
       - name: Cache ccache
         uses: actions/cache@v4
@@ -171,7 +178,7 @@ jobs:
           export CCACHE_DIR=/root/.ccache
           echo "Building Mesa..."
           cd ~/mesa-for-android-container
-          meson setup build/ \
+          /opt/meson-venv/bin/meson setup build/ \
             --prefix=/usr \
             -Dplatforms=x11,wayland \
             -Dgallium-drivers=freedreno,zink,virgl,llvmpipe \
@@ -206,7 +213,7 @@ jobs:
           echo "Packaging Mesa..."
           cd ~/mesa-for-android-container
           mkdir /tmp/mesa-install-tmp
-          DESTDIR=/tmp/mesa-install-tmp meson install -C build/
+          DESTDIR=/tmp/mesa-install-tmp /opt/meson-venv/bin/meson install -C build/
           tar -zcvf mesa-for-android-container_${MESA_RELEASE_NAME_SUFFIX}.tar.gz -C /tmp/mesa-install-tmp .
           rm -rf /tmp/mesa-install-tmp
           echo "Calculating sha256 checksums..."
