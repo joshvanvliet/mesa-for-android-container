@@ -138,8 +138,19 @@ jobs:
         run: |
           python3 -m venv /opt/meson-venv
           /opt/meson-venv/bin/pip install --upgrade pip
-          /opt/meson-venv/bin/pip install "meson>=1.4.0"
+          /opt/meson-venv/bin/pip install "meson>=1.4.0" "cmake>=3.27"
           /opt/meson-venv/bin/meson --version
+          /opt/meson-venv/bin/cmake --version
+
+      - name: Preflight toolchain checks (Bookworm)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Checking required tools before build..."
+          echo "meson: $(/opt/meson-venv/bin/meson --version)"
+          echo "cmake: $(/opt/meson-venv/bin/cmake --version | head -n1)"
+          echo "ninja: $(ninja --version)"
+          echo "gcc: $(gcc --version | head -n1)"
 
       - name: Build glslang >= 12.2 for Bookworm
         shell: bash
@@ -147,10 +158,10 @@ jobs:
           set -euo pipefail
           cd /tmp
           git clone --recursive --depth 1 --branch 15.1.0 https://github.com/KhronosGroup/glslang.git
-          cmake -S glslang -B glslang/build -G Ninja \
+          /opt/meson-venv/bin/cmake -S glslang -B glslang/build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/opt/glslang
-          cmake --build glslang/build --target install -j"$(nproc)"
+          /opt/meson-venv/bin/cmake --build glslang/build --target install -j"$(nproc)"
           /opt/glslang/bin/glslangValidator --version
           echo "/opt/glslang/bin" >> "$GITHUB_PATH"
 
@@ -190,6 +201,8 @@ jobs:
         run: |
           export CCACHE_DIR=/root/.ccache
           export PATH=/opt/glslang/bin:$PATH
+          echo "Using glslang at: $(command -v glslangValidator)"
+          glslangValidator --version
           echo "Building Mesa..."
           cd ~/mesa-for-android-container
           /opt/meson-venv/bin/meson setup build/ \
