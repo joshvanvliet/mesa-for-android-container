@@ -160,7 +160,10 @@ jobs:
           git clone --recursive --depth 1 --branch 15.1.0 https://github.com/KhronosGroup/glslang.git
           /opt/meson-venv/bin/cmake -S glslang -B glslang/build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=/opt/glslang
+            -DCMAKE_INSTALL_PREFIX=/opt/glslang \
+            -DBUILD_TESTING=OFF \
+            -DENABLE_OPT=OFF \
+            -DENABLE_GLSLANG_BINARIES=ON
           /opt/meson-venv/bin/cmake --build glslang/build --target install -j"$(nproc)"
           /opt/glslang/bin/glslangValidator --version
           echo "/opt/glslang/bin" >> "$GITHUB_PATH"
