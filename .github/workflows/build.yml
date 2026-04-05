@@ -130,13 +130,9 @@ jobs:
       - name: Install dependencies
         run: |
           sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources
-          cat >/etc/apt/sources.list.d/bookworm-backports.list <<'EOF'
-          deb http://deb.debian.org/debian bookworm-backports main contrib non-free non-free-firmware
-          EOF
           apt update
           apt build-dep -y mesa
-          apt install -y git ccache libxfixes-dev libarchive-dev python3-venv
-          apt install -y -t bookworm-backports glslang-tools glslang-dev
+          apt install -y git ccache libxfixes-dev libarchive-dev python3-venv cmake ninja-build
 
       - name: Install Meson >= 1.4 for Bookworm
         run: |
@@ -144,7 +140,19 @@ jobs:
           /opt/meson-venv/bin/pip install --upgrade pip
           /opt/meson-venv/bin/pip install "meson>=1.4.0"
           /opt/meson-venv/bin/meson --version
-          glslangValidator --version
+
+      - name: Build glslang >= 12.2 for Bookworm
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp
+          git clone --recursive --depth 1 --branch 15.1.0 https://github.com/KhronosGroup/glslang.git
+          cmake -S glslang -B glslang/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/opt/glslang
+          cmake --build glslang/build --target install -j"$(nproc)"
+          /opt/glslang/bin/glslangValidator --version
+          echo "/opt/glslang/bin" >> "$GITHUB_PATH"
 
       - name: Cache ccache
         uses: actions/cache@v4
@@ -181,6 +189,7 @@ jobs:
         shell: bash
         run: |
           export CCACHE_DIR=/root/.ccache
+          export PATH=/opt/glslang/bin:$PATH
           echo "Building Mesa..."
           cd ~/mesa-for-android-container
           /opt/meson-venv/bin/meson setup build/ \
