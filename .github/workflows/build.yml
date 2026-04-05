@@ -130,9 +130,13 @@ jobs:
       - name: Install dependencies
         run: |
           sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources
+          cat >/etc/apt/sources.list.d/bookworm-backports.list <<'EOF'
+          deb http://deb.debian.org/debian bookworm-backports main contrib non-free non-free-firmware
+          EOF
           apt update
           apt build-dep -y mesa
           apt install -y git ccache libxfixes-dev libarchive-dev python3-venv
+          apt install -y -t bookworm-backports glslang-tools glslang-dev
 
       - name: Install Meson >= 1.4 for Bookworm
         run: |
@@ -140,6 +144,7 @@ jobs:
           /opt/meson-venv/bin/pip install --upgrade pip
           /opt/meson-venv/bin/pip install "meson>=1.4.0"
           /opt/meson-venv/bin/meson --version
+          glslangValidator --version
 
       - name: Cache ccache
         uses: actions/cache@v4
