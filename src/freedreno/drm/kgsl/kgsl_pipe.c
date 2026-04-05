@@ -9,7 +9,7 @@ kgsl_pipe_safe_ioctl(int fd, unsigned long request, void *arg)
 
    do {
       ret = ioctl(fd, request, arg);
-   } while (ret == -1 && (errno == EINTR || errno == EAGAIN));
+   } while (ret == -1 && (errno == EINTR || errno == EAGAIN || errno == EDEADLK));
 
    return ret;
 }
